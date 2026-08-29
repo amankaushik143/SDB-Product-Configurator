@@ -60,6 +60,9 @@ class SDB_Product_Range {
 					'viewCart'     => __( 'View cart', 'sdb-product-configurator' ),
 					'errorCart'    => __( 'Could not add to cart. Please try again.', 'sdb-product-configurator' ),
 					'outOfStock'   => __( 'Out of stock', 'sdb-product-configurator' ),
+					'quickView'    => __( 'Quick view', 'sdb-product-configurator' ),
+					'close'        => __( 'Close', 'sdb-product-configurator' ),
+					'loading'      => __( 'Loading…', 'sdb-product-configurator' ),
 				),
 			)
 		);
@@ -78,14 +81,55 @@ class SDB_Product_Range {
 
 		$atts = shortcode_atts(
 			array(
-				'per_page' => '',
-				'default'  => '', // product_cat slug or term_id override
+				'per_page'   => '',
+				'default'    => '', // product_cat slug or term_id override
+				'categories' => '', // comma-separated product_cat slugs or term_ids — restricts + orders which admin-configured icons show on THIS instance; empty = show all configured icons (old behavior)
 			),
 			$atts,
 			'sdb_product_range'
 		);
 
 		$ranges = SDB_Range_Settings::get_ranges();
+
+		// If this instance asked for a specific subset of categories, filter the
+		// admin-configured rows down to just those — and use the order given in
+		// the shortcode attribute, so different pages can show different category
+		// icons (in a different order) from the same master list managed in
+		// Configurator → Product Range. Icon/label overrides still come from the
+		// admin row; this attribute only picks which ones appear, and in what order.
+		if ( '' !== trim( $atts['categories'] ) ) {
+			$wanted_raw = array_filter( array_map( 'trim', explode( ',', $atts['categories'] ) ) );
+
+			$by_term_id = array();
+			foreach ( $ranges as $row ) {
+				if ( ! empty( $row['term_id'] ) ) {
+					$by_term_id[ (int) $row['term_id'] ] = $row;
+				}
+			}
+
+			$filtered = array();
+			foreach ( $wanted_raw as $w ) {
+				$term_id = 0;
+				if ( is_numeric( $w ) ) {
+					$term_id = absint( $w );
+				} else {
+					$term = get_term_by( 'slug', sanitize_title( $w ), 'product_cat' );
+					if ( $term && ! is_wp_error( $term ) ) {
+						$term_id = (int) $term->term_id;
+					}
+				}
+				if ( $term_id && isset( $by_term_id[ $term_id ] ) ) {
+					$filtered[] = $by_term_id[ $term_id ];
+				}
+			}
+
+			// Only apply the filter if at least one requested category actually matched
+			// a configured row — an all-miss (e.g. a typo) falls back to showing
+			// everything rather than silently rendering an empty row.
+			if ( ! empty( $filtered ) ) {
+				$ranges = $filtered;
+			}
+		}
 
 		// Only show icons for categories that currently have at least one product.
 		$ranges = array_values(
@@ -112,22 +156,33 @@ class SDB_Product_Range {
 
 		$per_page = $atts['per_page'] !== '' ? max( 1, absint( $atts['per_page'] ) ) : SDB_Range_Settings::get_per_page();
 
-		$range_term_ids = wp_list_pluck( $ranges, 'term_id' );
-
+		// The default/initial category does NOT have to be one of the icons
+		// above — e.g. a catch-all "show everything" category (such as an
+		// "0-all" category some sites tag every product into) is a valid
+		// default even with no dedicated icon of its own. We only require
+		// that it's a real product category that actually has products.
 		$default_term_id = 0;
 		if ( '' !== $atts['default'] ) {
 			$term = is_numeric( $atts['default'] )
 				? get_term( absint( $atts['default'] ), 'product_cat' )
 				: get_term_by( 'slug', sanitize_title( $atts['default'] ), 'product_cat' );
-			if ( $term && ! is_wp_error( $term ) ) {
+			if ( $term && ! is_wp_error( $term ) && $term->count > 0 ) {
 				$default_term_id = (int) $term->term_id;
 			}
 		}
-		if ( ! $default_term_id || ! in_array( (int) $default_term_id, array_map( 'absint', $range_term_ids ), true ) ) {
-			$configured_default = SDB_Range_Settings::get_default_term_id();
-			$default_term_id    = in_array( (int) $configured_default, array_map( 'absint', $range_term_ids ), true )
-				? $configured_default
-				: absint( $ranges[0]['term_id'] );
+
+		if ( ! $default_term_id ) {
+			$configured_default = absint( SDB_Range_Settings::get_default_term_id() );
+			if ( $configured_default ) {
+				$configured_term = get_term( $configured_default, 'product_cat' );
+				if ( $configured_term && ! is_wp_error( $configured_term ) && $configured_term->count > 0 ) {
+					$default_term_id = $configured_default;
+				}
+			}
+		}
+
+		if ( ! $default_term_id ) {
+			$default_term_id = absint( $ranges[0]['term_id'] );
 		}
 
 		self::$instance_count++;
@@ -154,10 +209,14 @@ class SDB_Product_Range {
 				<img src="<?php echo esc_url( $product['image'] ); ?>" alt="<?php echo esc_attr( $product['name'] ); ?>" loading="lazy">
 			</a>
 			<div class="sdbpr-card-body">
-				<a class="sdbpr-card-name" href="<?php echo esc_url( $product['permalink'] ); ?>">
-					<span class="sdbpr-card-name-text"><?php echo esc_html( $product['name'] ); ?></span>
-					<span class="sdbpr-card-name-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="11"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
-				</a>
+				<div class="sdbpr-card-name-row">
+					<a class="sdbpr-card-name" href="<?php echo esc_url( $product['permalink'] ); ?>">
+						<span class="sdbpr-card-name-text"><?php echo esc_html( $product['name'] ); ?></span>
+					</a>
+					<button type="button" class="sdbpr-quickview-btn" data-product-id="<?php echo esc_attr( $product['id'] ); ?>" aria-label="<?php esc_attr_e( 'Quick view', 'sdb-product-configurator' ); ?>">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="11"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+					</button>
+				</div>
 				<div class="sdbpr-card-price"><?php echo wp_kses_post( $product['price_html'] ); ?></div>
 			</div>
 			<?php if ( $oos ) : ?>

@@ -15,20 +15,23 @@
 		$('.sdbpr-wrap').each(function () {
 			initInstance($(this));
 		});
+		initQuickView();
 	});
 
 	function initInstance($wrap) {
 		var state = {
-			termId:  parseInt($wrap.data('active-term'), 10) || 0,
-			perPage: parseInt($wrap.data('per-page'), 10) || 8,
-			page:    1,
-			loading: false,
+			termId:        parseInt($wrap.data('active-term'), 10) || 0,
+			defaultTermId: parseInt($wrap.data('active-term'), 10) || 0,
+			perPage:       parseInt($wrap.data('per-page'), 10) || 8,
+			page:          1,
+			loading:       false,
 		};
 		$wrap.data('sdbprState', state);
 
 		var $cats     = $wrap.find('.sdbpr-cats');
 		var $products = $wrap.find('.sdbpr-products');
 		var $pager    = $wrap.find('.sdbpr-pagination-wrap');
+		var $reset    = $wrap.find('.sdbpr-reset-filter');
 
 		/* Category click → filter grid (configurator/link items use their own native behavior) */
 		$cats.on('click', '.sdbpr-cat-item[data-type="category"]', function () {
@@ -43,6 +46,21 @@
 			$(this).addClass('sdbpr-active').attr('aria-selected', 'true');
 
 			loadProducts($wrap, state, $products, $pager);
+		});
+
+		/* Reset filter → back to the default category (e.g. an "show everything"
+		   catch-all category), clearing whichever icon is currently active. */
+		$reset.on('click', function () {
+			if (!state.defaultTermId || (state.termId === state.defaultTermId && 1 === state.page)) {
+				return;
+			}
+			state.termId = state.defaultTermId;
+			state.page   = 1;
+
+			$cats.find('.sdbpr-cat-item').removeClass('sdbpr-active').attr('aria-selected', 'false');
+
+			loadProducts($wrap, state, $products, $pager);
+			scrollToTop($wrap);
 		});
 
 		/* Pagination click */
@@ -119,10 +137,14 @@
 							'<img src="' + escAttr(p.image) + '" alt="' + escAttr(p.name) + '" loading="lazy">' +
 						'</a>' +
 						'<div class="sdbpr-card-body">' +
-							'<a class="sdbpr-card-name" href="' + escAttr(p.permalink) + '">' +
-								'<span class="sdbpr-card-name-text">' + escHtml(p.name) + '</span>' +
-								'<span class="sdbpr-card-name-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="11"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>' +
-							'</a>' +
+							'<div class="sdbpr-card-name-row">' +
+								'<a class="sdbpr-card-name" href="' + escAttr(p.permalink) + '">' +
+									'<span class="sdbpr-card-name-text">' + escHtml(p.name) + '</span>' +
+								'</a>' +
+								'<button type="button" class="sdbpr-quickview-btn" data-product-id="' + p.id + '" aria-label="' + escAttr(i18n.quickView || 'Quick view') + '">' +
+									'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="11"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>' +
+								'</button>' +
+							'</div>' +
 							'<div class="sdbpr-card-price">' + p.price_html + '</div>' +
 						'</div>';
 
@@ -233,6 +255,165 @@
 				$(this).remove();
 			});
 		}, 5000);
+	}
+
+	/* ── Quick view popup (triggered by the "i" icon next to the product name) ── */
+	var $qvOverlay = null;
+
+	function initQuickView() {
+		if ($qvOverlay) {
+			return;
+		}
+
+		$qvOverlay = $(
+			'<div class="sdbpr-qv-overlay" id="sdbpr-qv-overlay" aria-hidden="true">' +
+				'<div class="sdbpr-qv-modal" role="dialog" aria-modal="true">' +
+					'<button type="button" class="sdbpr-qv-close" aria-label="' + escAttr(i18n.close || 'Close') + '">&times;</button>' +
+					'<div class="sdbpr-qv-body"></div>' +
+				'</div>' +
+			'</div>'
+		).appendTo('body');
+
+		$qvOverlay.on('click', function (e) {
+			if (e.target === this) {
+				closeQuickView();
+			}
+		});
+		$qvOverlay.on('click', '.sdbpr-qv-close', closeQuickView);
+		$qvOverlay.on('click', '.sdbpr-qv-add-btn', function () {
+			addToCartFromQuickView($(this));
+		});
+		$qvOverlay.on('change', '.sdbpr-qv-qty', function () {
+			var v = Math.max(1, parseInt($(this).val(), 10) || 1);
+			$(this).val(v);
+		});
+
+		$(document).on('keydown', function (e) {
+			if (e.key === 'Escape' && $qvOverlay.hasClass('sdbpr-qv-visible')) {
+				closeQuickView();
+			}
+		});
+
+		$(document).on('click', '.sdbpr-quickview-btn', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var productId = parseInt($(this).data('product-id'), 10);
+			if (productId) {
+				openQuickView(productId);
+			}
+		});
+	}
+
+	function openQuickView(productId) {
+		if (!$qvOverlay) {
+			initQuickView();
+		}
+
+		var $body = $qvOverlay.find('.sdbpr-qv-body');
+		$body.html('<div class="sdbpr-loading"><span class="sdbpr-spinner"></span></div>');
+		$qvOverlay.addClass('sdbpr-qv-visible').attr('aria-hidden', 'false');
+		$('body').addClass('sdbpr-qv-open');
+
+		$.post(cfg.ajaxUrl, {
+			action:     'sdbpr_quick_view',
+			nonce:      cfg.nonce,
+			product_id: productId,
+		}, function (response) {
+			if (!response || !response.success) {
+				$body.html('<div class="sdbpr-error">' + escHtml(i18n.errorLoading || 'Something went wrong.') + '</div>');
+				return;
+			}
+			renderQuickViewBody($body, response.data);
+		}).fail(function () {
+			$body.html('<div class="sdbpr-error">' + escHtml(i18n.errorLoading || 'Something went wrong.') + '</div>');
+		});
+	}
+
+	function closeQuickView() {
+		if (!$qvOverlay) {
+			return;
+		}
+		$qvOverlay.removeClass('sdbpr-qv-visible').attr('aria-hidden', 'true');
+		$('body').removeClass('sdbpr-qv-open');
+	}
+
+	function renderQuickViewBody($body, p) {
+		var oos = !p.in_stock || !p.purchasable;
+
+		var html = '<div class="sdbpr-qv-image" role="img" aria-label="' + escAttr(p.name) + '" style="background-image:url(\'' + escAttr(p.image) + '\')"></div>' +
+			'<div class="sdbpr-qv-info">' +
+				'<a class="sdbpr-qv-name" href="' + escAttr(p.permalink) + '">' + escHtml(p.name) + '</a>' +
+				'<div class="sdbpr-qv-price">' + p.price_html + '</div>' +
+				(p.short_description ? '<div class="sdbpr-qv-desc">' + p.short_description + '</div>' : '');
+
+		if (oos) {
+			html += '<div class="sdbpr-card-oos">' + escHtml(i18n.outOfStock || 'Out of stock') + '</div>';
+		} else {
+			html += '<div class="sdbpr-qv-actions">' +
+						'<input type="number" class="sdbpr-qty-input sdbpr-qv-qty" value="1" min="1">' +
+						'<button type="button" class="sdbpr-add-btn sdbpr-qv-add-btn" data-product-id="' + p.id + '" aria-label="Add to cart">' +
+							'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>' +
+						'</button>' +
+					'</div>' +
+					'<div class="sdbpr-qv-msg"></div>';
+		}
+
+		html += '</div>';
+
+		$body.html(html);
+	}
+
+	function addToCartFromQuickView($btn) {
+		if ($btn.prop('disabled')) {
+			return;
+		}
+
+		var productId = parseInt($btn.data('product-id'), 10);
+		var $info      = $btn.closest('.sdbpr-qv-info');
+		var quantity   = Math.max(1, parseInt($info.find('.sdbpr-qv-qty').val(), 10) || 1);
+
+		if (!productId) {
+			return;
+		}
+
+		var originalHtml = $btn.html();
+		$btn.prop('disabled', true);
+
+		$.post(cfg.ajaxUrl, {
+			action:     'sdbpr_add_to_cart',
+			nonce:      cfg.nonce,
+			product_id: productId,
+			quantity:   quantity,
+		}, function (response) {
+			if (response && response.success) {
+				$btn.addClass('sdbpr-added');
+
+				var cartUrl = cfg.cartUrl || '';
+				var msgHtml = escHtml(i18n.added || 'Added ✓');
+				if (cartUrl) {
+					msgHtml += ' <a href="' + escAttr(cartUrl) + '">' + escHtml(i18n.viewCart || 'View cart') + '</a>';
+				}
+				$info.find('.sdbpr-qv-msg').html(msgHtml);
+
+				if (response.data.fragments) {
+					$.each(response.data.fragments, function (key, value) {
+						$(key).replaceWith(value);
+					});
+				}
+				$(document.body).trigger('wc_fragment_refresh');
+
+				setTimeout(function () {
+					$btn.removeClass('sdbpr-added').prop('disabled', false).html(originalHtml);
+					$info.find('.sdbpr-qv-msg').empty();
+				}, 1200);
+			} else {
+				alert((response && response.data && response.data.message) || i18n.errorCart || 'Could not add to cart.');
+				$btn.prop('disabled', false).html(originalHtml);
+			}
+		}).fail(function () {
+			alert(i18n.errorCart || 'Could not add to cart.');
+			$btn.prop('disabled', false).html(originalHtml);
+		});
 	}
 
 	/* ── Utilities ───────────────────────────────────────────────────────── */

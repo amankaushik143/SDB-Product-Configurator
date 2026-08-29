@@ -19,6 +19,9 @@ class SDB_Range_Ajax {
 
 		add_action( 'wp_ajax_sdbpr_add_to_cart', array( __CLASS__, 'add_to_cart' ) );
 		add_action( 'wp_ajax_nopriv_sdbpr_add_to_cart', array( __CLASS__, 'add_to_cart' ) );
+
+		add_action( 'wp_ajax_sdbpr_quick_view', array( __CLASS__, 'quick_view' ) );
+		add_action( 'wp_ajax_nopriv_sdbpr_quick_view', array( __CLASS__, 'quick_view' ) );
 	}
 
 	/* ── Get products for one category page ─────────────────────────────── */
@@ -141,6 +144,44 @@ class SDB_Range_Ajax {
 				'fragments'  => $fragments,
 				'cart_count' => WC()->cart->get_cart_contents_count(),
 				'cart_url'   => wc_get_cart_url(),
+			)
+		);
+	}
+
+	/* ── Quick view: fuller detail for one product, shown in a popup ─────── */
+	public static function quick_view() {
+		check_ajax_referer( 'sdbpr_nonce', 'nonce' );
+
+		$product_id = isset( $_POST['product_id'] ) ? absint( $_POST['product_id'] ) : 0;
+		if ( ! $product_id ) {
+			wp_send_json_error( array( 'message' => __( 'No product specified.', 'sdb-product-configurator' ) ) );
+		}
+
+		$product = wc_get_product( $product_id );
+		if ( ! $product ) {
+			wp_send_json_error( array( 'message' => __( 'Product not found.', 'sdb-product-configurator' ) ) );
+		}
+
+		$image_url = get_the_post_thumbnail_url( $product_id, 'large' );
+		if ( ! $image_url ) {
+			$image_url = wc_placeholder_img_src( 'large' );
+		}
+
+		$short_description = $product->get_short_description();
+		if ( '' === $short_description ) {
+			$short_description = wp_trim_words( $product->get_description(), 40 );
+		}
+
+		wp_send_json_success(
+			array(
+				'id'                => $product->get_id(),
+				'name'              => $product->get_name(),
+				'price_html'        => $product->get_price_html(),
+				'image'             => esc_url( $image_url ),
+				'permalink'         => esc_url( get_permalink( $product_id ) ),
+				'short_description' => wp_kses_post( $short_description ),
+				'in_stock'          => $product->is_in_stock(),
+				'purchasable'       => $product->is_purchasable(),
 			)
 		);
 	}

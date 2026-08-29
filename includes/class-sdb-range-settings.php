@@ -40,15 +40,22 @@ class SDB_Range_Settings {
 
 	/**
 	 * The category (term_id) that should be active when the shortcode first renders.
+	 *
+	 * The saved default does NOT have to be one of the configured icon rows —
+	 * e.g. a catch-all "show everything" category (such as an "0-all" category
+	 * some sites tag every product into) is a valid default even with no
+	 * dedicated icon of its own. We only require that it's a real product
+	 * category that actually has products, matching the same relaxed check
+	 * used in SDB_Product_Range::render_shortcode().
 	 */
 	public static function get_default_term_id() {
 		$s = self::get_option_data();
 
 		if ( ! empty( $s['range_default_term'] ) ) {
-			foreach ( self::get_ranges() as $range ) {
-				if ( ! empty( $range['term_id'] ) && (int) $range['term_id'] === (int) $s['range_default_term'] ) {
-					return absint( $s['range_default_term'] );
-				}
+			$term_id = absint( $s['range_default_term'] );
+			$term    = get_term( $term_id, 'product_cat' );
+			if ( $term && ! is_wp_error( $term ) && $term->count > 0 ) {
+				return $term_id;
 			}
 		}
 
@@ -141,6 +148,8 @@ class SDB_Range_Settings {
 				<?php self::render_row( '__RI__', array(), true, $categories, $tiers ); ?>
 			</script>
 		</div>
+
+		<?php self::render_shortcode_generator( $ranges, $categories, $per_page ); ?>
 		<?php
 	}
 
@@ -182,6 +191,89 @@ class SDB_Range_Settings {
 
 				<button type="button" class="button sdbpc-range-remove-row"><?php esc_html_e( '✕ Remove', 'sdb-product-configurator' ); ?></button>
 			</div>
+		</div>
+		<?php
+	}
+
+	/* ─────────────────────────────────────────────────────────────────────
+	 * SHORTCODE GENERATOR  (pick configured icons by name, get a ready
+	 *    [sdb_product_range ...] string to paste into any page — no need
+	 *    to know WooCommerce category IDs.)
+	 * ───────────────────────────────────────────────────────────────────── */
+
+	private static function display_label( $row, $categories ) {
+		if ( ! empty( $row['label'] ) ) {
+			return $row['label'];
+		}
+
+		$term_id = isset( $row['term_id'] ) ? (int) $row['term_id'] : 0;
+		foreach ( $categories as $cat ) {
+			if ( (int) $cat->term_id === $term_id ) {
+				return $cat->name;
+			}
+		}
+
+		return '';
+	}
+
+	private static function render_shortcode_generator( $ranges, $categories, $per_page ) {
+		// Only rows that actually have a category chosen can be used.
+		$rows = array();
+		foreach ( $ranges as $row ) {
+			if ( ! empty( $row['term_id'] ) ) {
+				$rows[] = $row;
+			}
+		}
+		?>
+		<div class="sdbpc-card" id="sdbpc-shortcode-generator">
+			<h2><?php esc_html_e( 'Shortcode Generator', 'sdb-product-configurator' ); ?></h2>
+			<p class="sdbpc-desc">
+				<?php esc_html_e( 'Tick the categories a page should show (from the icons configured above), then copy the shortcode and paste it into that page. Every page can show a different set — you never need to type a category ID.', 'sdb-product-configurator' ); ?>
+			</p>
+
+			<?php if ( empty( $rows ) ) : ?>
+				<p class="sdbpc-desc"><?php esc_html_e( 'Add at least one category icon above first.', 'sdb-product-configurator' ); ?></p>
+			<?php else : ?>
+
+				<div id="sdbpc-gen-checks">
+					<?php foreach ( $rows as $row ) : ?>
+						<label class="sdbpc-gen-check">
+							<input type="checkbox" class="sdbpc-gen-cat-check" value="<?php echo esc_attr( absint( $row['term_id'] ) ); ?>" checked>
+							<?php echo esc_html( self::display_label( $row, $categories ) ); ?>
+						</label>
+					<?php endforeach; ?>
+				</div>
+
+				<table class="sdbpc-table" style="max-width:460px;margin:10px 0 16px;">
+					<tr>
+						<th><?php esc_html_e( 'Default category', 'sdb-product-configurator' ); ?></th>
+						<td>
+							<select id="sdbpc-gen-default">
+								<option value=""><?php esc_html_e( '— first ticked category —', 'sdb-product-configurator' ); ?></option>
+								<?php foreach ( $rows as $row ) : ?>
+									<option value="<?php echo esc_attr( absint( $row['term_id'] ) ); ?>"><?php echo esc_html( self::display_label( $row, $categories ) ); ?></option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description"><?php esc_html_e( 'Which category\'s products load first on this page. Picking it here also ticks it above.', 'sdb-product-configurator' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th><?php esc_html_e( 'Products per page', 'sdb-product-configurator' ); ?></th>
+						<td>
+							<input type="number" min="1" max="48" id="sdbpc-gen-per-page" class="small-text" placeholder="<?php echo esc_attr( $per_page ); ?>">
+							<p class="description"><?php esc_html_e( 'Leave blank to use the site-wide default set above.', 'sdb-product-configurator' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<p style="margin-bottom:6px;"><strong><?php esc_html_e( 'Shortcode for this page:', 'sdb-product-configurator' ); ?></strong></p>
+				<div class="sdbpc-gen-output-wrap">
+					<input type="text" id="sdbpc-gen-output" readonly value="[sdb_product_range]" onclick="this.select();">
+					<button type="button" class="button button-primary" id="sdbpc-gen-copy"><?php esc_html_e( 'Copy', 'sdb-product-configurator' ); ?></button>
+				</div>
+				<p class="description" id="sdbpc-gen-copy-msg" style="display:none;"></p>
+
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -236,6 +328,10 @@ class SDB_Range_Settings {
 		.sdbpc-range-inline-check{flex-direction:row!important;align-items:center;gap:6px!important;font-size:12px;font-weight:400!important;margin-top:6px}
 		.sdbpc-range-remove-row{align-self:flex-end;color:#c0392b!important;border-color:#e0b0b0!important}
 		.sdbpc-range-remove-row:hover{background:#c0392b!important;color:#fff!important;border-color:#c0392b!important}
+		#sdbpc-gen-checks{display:flex;flex-wrap:wrap;margin-bottom:4px}
+		.sdbpc-gen-check{display:inline-flex;align-items:center;gap:6px;margin:0 18px 10px 0;font-size:13px}
+		.sdbpc-gen-output-wrap{display:flex;gap:8px;align-items:center;max-width:640px}
+		#sdbpc-gen-output{flex:1;font-family:Consolas,Menlo,monospace;font-size:13px;padding:6px 8px}
 		';
 	}
 
@@ -243,7 +339,7 @@ class SDB_Range_Settings {
 		return <<<'JS'
 jQuery(function($){
     var $rows = $("#sdbpc-range-rows");
-    if(!$rows.length) return;
+    if($rows.length){
 
     $rows.sortable({ handle: ".sdbpc-range-drag", update: reindex });
 
@@ -293,6 +389,73 @@ jQuery(function($){
                 if(n) $(this).attr("name", n.replace(/\[ranges\]\[\d+\]/, "[ranges][" + ri + "]"));
             });
         });
+    }
+
+    }
+
+    /* ── Shortcode generator ── */
+    var $genOut = $("#sdbpc-gen-output");
+    if($genOut.length){
+
+        function sdbpcGenUpdate(){
+            var $checks = $(".sdbpc-gen-cat-check");
+            var total   = $checks.length;
+            var $picked = $checks.filter(":checked");
+            var ids     = $picked.map(function(){ return $(this).val(); }).get();
+
+            var $copyBtn = $("#sdbpc-gen-copy");
+
+            if(!ids.length){
+                $genOut.val("Tick at least one category above.");
+                $copyBtn.prop("disabled", true);
+                return;
+            }
+            $copyBtn.prop("disabled", false);
+
+            var attrs = [];
+            if(ids.length < total){
+                attrs.push('categories="' + ids.join(",") + '"');
+            }
+            var def = $("#sdbpc-gen-default").val();
+            if(def){
+                attrs.push('default="' + def + '"');
+            }
+            var pp = $.trim($("#sdbpc-gen-per-page").val());
+            if(pp){
+                attrs.push('per_page="' + pp + '"');
+            }
+
+            var shortcode = attrs.length ? "[sdb_product_range " + attrs.join(" ") + "]" : "[sdb_product_range]";
+            $genOut.val(shortcode);
+        }
+
+        $("#sdbpc-gen-default").on("change", function(){
+            var v = $(this).val();
+            if(v){
+                $('.sdbpc-gen-cat-check[value="' + v + '"]').prop("checked", true);
+            }
+        });
+
+        $(document).on("change", ".sdbpc-gen-cat-check, #sdbpc-gen-default", sdbpcGenUpdate);
+        $(document).on("keyup change", "#sdbpc-gen-per-page", sdbpcGenUpdate);
+
+        $("#sdbpc-gen-copy").on("click", function(){
+            if($(this).prop("disabled")) return;
+            var el = document.getElementById("sdbpc-gen-output");
+            el.focus();
+            el.select();
+            el.setSelectionRange(0, 99999);
+            var ok = false;
+            try { ok = document.execCommand("copy"); } catch(e){ ok = false; }
+            var $msg = $("#sdbpc-gen-copy-msg");
+            if(ok){
+                $msg.stop(true, true).css("color", "#2e7d32").text("Copied!").show().delay(1500).fadeOut();
+            } else {
+                $msg.stop(true, true).css("color", "#996600").text("Press Ctrl+C to copy the selected text.").show();
+            }
+        });
+
+        sdbpcGenUpdate();
     }
 });
 JS;

@@ -16,22 +16,28 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <div class="sdbpr-wrap" id="<?php echo esc_attr( $instance_id ); ?>" data-per-page="<?php echo esc_attr( $per_page ); ?>" data-active-term="<?php echo esc_attr( $default_term_id ); ?>">
 
-	<div class="sdbpr-cats" role="tablist">
-		<?php foreach ( $ranges as $row ) :
-			$icon      = SDB_Product_Range::resolve_icon_url( $row );
-			$label     = SDB_Product_Range::resolve_label( $row );
-			$is_active = ( (int) $row['term_id'] === (int) $default_term_id );
-			?>
-			<button type="button"
-					class="sdbpr-cat-item<?php echo $is_active ? ' sdbpr-active' : ''; ?>"
-					data-type="category"
-					data-term-id="<?php echo esc_attr( $row['term_id'] ); ?>"
-					role="tab"
-					aria-selected="<?php echo $is_active ? 'true' : 'false'; ?>">
-				<span class="sdbpr-cat-icon"><?php if ( $icon ) : ?><img src="<?php echo esc_url( $icon ); ?>" alt="" loading="lazy"><?php endif; ?></span>
-				<span class="sdbpr-cat-label"><?php echo esc_html( $label ); ?></span>
-			</button>
-		<?php endforeach; ?>
+	<div class="sdbpr-cats-wrap">
+		<div class="sdbpr-cats" role="tablist">
+			<?php foreach ( $ranges as $row ) :
+				$icon      = SDB_Product_Range::resolve_icon_url( $row );
+				$label     = SDB_Product_Range::resolve_label( $row );
+				$is_active = ( (int) $row['term_id'] === (int) $default_term_id );
+				?>
+				<button type="button"
+						class="sdbpr-cat-item<?php echo $is_active ? ' sdbpr-active' : ''; ?>"
+						data-type="category"
+						data-term-id="<?php echo esc_attr( $row['term_id'] ); ?>"
+						role="tab"
+						aria-selected="<?php echo $is_active ? 'true' : 'false'; ?>">
+					<span class="sdbpr-cat-icon"><?php if ( $icon ) : ?><img src="<?php echo esc_url( $icon ); ?>" alt="" loading="lazy"><?php endif; ?></span>
+					<span class="sdbpr-cat-label"><?php echo esc_html( $label ); ?></span>
+				</button>
+			<?php endforeach; ?>
+		</div>
+
+		<button type="button" class="sdbpr-reset-filter" data-default-term="<?php echo esc_attr( $default_term_id ); ?>">
+			<?php esc_html_e( 'Reset filter', 'sdb-product-configurator' ); ?>
+		</button>
 	</div>
 
 	<div class="sdbpr-products" aria-live="polite">
