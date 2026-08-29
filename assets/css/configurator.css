@@ -1,0 +1,641 @@
+/* ==========================================================================
+   SDB Product Configurator – Front-end styles
+   All selectors are scoped to the .sdbpkp- prefix to avoid conflicts.
+   ========================================================================== */
+
+/* ── Reset (scoped) ─────────────────────────────────────────────────────── */
+.sdbpkp-reset * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ── Trigger buttons block ──────────────────────────────────────────────── */
+.sdbpkp-product-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 40px;
+}
+
+.sdbpkp-product-btn {
+    background: #fff;
+    border: none;
+    padding: 30px;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.sdbpkp-product-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+.sdbpkp-product-btn-title {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.sdbpkp-product-btn-desc {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* ── Modal overlay ──────────────────────────────────────────────────────── */
+.sdbpkp-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 999999;
+    overflow-y: auto;
+}
+
+.sdbpkp-modal-overlay.sdbpkp-active {
+    display: block;
+}
+
+/* ── Modal container ────────────────────────────────────────────────────── */
+.sdbpkp-modal-container {
+    position: relative;
+    background-color: #fff;
+    max-width: 1400px;
+    margin: 20px auto;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+@media (max-width: 768px) {
+    .sdbpkp-modal-container {
+        padding: 20px;
+        margin: 10px;
+    }
+}
+
+/* ── Close button ───────────────────────────────────────────────────────── */
+.sdbpkp-close-modal {
+    position: absolute;
+    top: 16px;
+    right: 1px;
+    border: none !important;
+    width: 36px;
+    border-radius: unset;
+    font-size: 19px !important;
+    cursor: pointer !important;
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+    line-height: 1;
+    color: #000 !important;
+    font-weight: 700 !important;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.sdbpkp-close-modal:hover {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+}
+
+/* ── Modal header ───────────────────────────────────────────────────────── */
+.sdbpkp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.sdbpkp-modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* ── Next / Finish button ───────────────────────────────────────────────── */
+.sdbpkp-next-btn {
+    background-color: #111 !important;
+    color: #fff !important;
+    border: 2px solid #111;
+    padding: 12px 30px !important;
+    border-radius: 999px !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+    white-space: nowrap;
+}
+
+.sdbpkp-next-btn:hover {
+    background-color: #333;
+    border-color: #333;
+}
+
+/* When on the last step, switch to outlined "Complete" style */
+.sdbpkp-next-btn.sdbpkp-btn-finish {
+    background-color: #fff;
+    color: #111;
+    border: 2px solid #111;
+}
+
+.sdbpkp-next-btn.sdbpkp-btn-finish:hover {
+    background-color: #111;
+    color: #fff;
+}
+
+.sdbpkp-next-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Progress stepper ───────────────────────────────────────────────────── */
+.sdbpkp-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    padding-top: 10px;
+    border-bottom: 2px solid #e0e0e0;
+    overflow-x: auto;
+}
+
+.sdbpkp-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1;
+    min-width: 80px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Every step is always hoverable – user can jump to any step freely */
+.sdbpkp-step:hover .sdbpkp-step-number {
+    background-color: #000;
+    transform: scale(1.08);
+}
+
+.sdbpkp-step-number {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #d0d0d0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 10px;
+    z-index: 2;
+    transition: background 0.25s, transform 0.2s;
+    border: 3px solid transparent;
+}
+
+/* Active step */
+.sdbpkp-step.sdbpkp-active .sdbpkp-step-number {
+       background-color: #000;
+    border-color: #000;
+}
+
+/* Visited steps (completed) */
+.sdbpkp-step.sdbpkp-visited .sdbpkp-step-number {
+    background-color: #000;
+}
+
+.sdbpkp-step-label {
+    font-size: 12px;
+    color: #555;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+}
+
+.sdbpkp-step.sdbpkp-active .sdbpkp-step-label {
+    color: #000;
+}
+
+/* Connector line between steps */
+.sdbpkp-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 23px;
+    left: 60%;
+    width: 80%;
+    height: 2px;
+    background-color: #d0d0d0;
+    z-index: 1;
+    transition: background 0.3s;
+}
+
+.sdbpkp-step.sdbpkp-visited:not(:last-child)::after {
+    background-color: #a0aff6;
+}
+
+/* ── Main content grid ──────────────────────────────────────────────────── */
+.sdbpkp-content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 40px;
+}
+
+@media (max-width: 1024px) {
+    .sdbpkp-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Product list ───────────────────────────────────────────────────────── */
+.sdbpkp-products-section {
+    flex: 1;
+}
+
+.sdbpkp-product-item {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+@media (max-width: 640px) {
+    .sdbpkp-product-item {
+        flex-direction: column;
+    }
+}
+
+.sdbpkp-product-image {
+    width: 120px;
+    height: 120px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 48px;
+}
+
+.sdbpkp-product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sdbpkp-product-details {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+}
+
+@media (max-width: 640px) {
+    .sdbpkp-product-details {
+        flex-direction: column;
+    }
+}
+
+.sdbpkp-product-left {
+    flex: 1;
+    max-width: 500px;
+}
+
+.sdbpkp-product-right {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+@media (max-width: 640px) {
+    .sdbpkp-product-right {
+        margin-left: 0;
+        justify-content: space-between;
+    }
+}
+
+.sdbpkp-product-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 8px;
+}
+
+.sdbpkp-product-price {
+    font-size: 16px;
+    font-weight: 600;
+    color: #000;
+    min-width: 70px;
+}
+
+.sdbpkp-product-description {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+.sdbpkp-cat-description {
+    border: 2px solid #667eea;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: #444;
+    line-height: 1.6;
+    background: #f7f8ff;
+}
+/* ── Quantity control ───────────────────────────────────────────────────── */
+.sdbpkp-quantity-control {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 200px;
+}
+
+.sdbpkp-qty-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #d0d0d0;
+    background-color: #fff;
+    cursor: pointer;
+    font-size: 18px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    line-height: 1;
+}
+
+.sdbpkp-qty-btn:hover {
+    background-color: #f5f5f5;
+}
+
+.sdbpkp-qty-input {
+    width: 60px;
+    height: 40px;
+    text-align: center;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    font-size: 14px;
+    -moz-appearance: textfield;
+}
+
+.sdbpkp-qty-input::-webkit-inner-spin-button,
+.sdbpkp-qty-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* ── Cart sidebar ───────────────────────────────────────────────────────── */
+.sdbpkp-cart-section {
+    border: 3px solid #000;
+    border-radius: 8px;
+    padding: 30px;
+    height: fit-content;
+    background-color: #fafafa;
+    position: sticky;
+    top: 20px;
+}
+
+@media (max-width: 1024px) {
+    .sdbpkp-cart-section {
+        position: static;
+    }
+}
+
+.sdbpkp-cart-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.sdbpkp-cart-items {
+    margin-bottom: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.sdbpkp-cart-item {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    padding: 5px 0;
+}
+
+.sdbpkp-cart-item-id {
+    font-size: 12px;
+    color: #999;
+    font-style: italic;
+}
+
+.sdbpkp-cart-total {
+    border-top: 2px solid #e0e0e0;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.sdbpkp-cart-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.sdbpkp-cart-total-label {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.sdbpkp-cart-total-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: #000;
+}
+
+.sdbpkp-cart-subtotal {
+    font-size: 14px;
+    color: #666;
+    text-align: right;
+    margin-bottom: 15px;
+}
+
+.sdbpkp-cart-item-price {
+    float: right;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.sdbpkp-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 40px;
+}
+
+/* ── State / utility ────────────────────────────────────────────────────── */
+.sdbpkp-no-products {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.sdbpkp-loading {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+    font-size: 16px;
+}
+
+.sdbpkp-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(102, 126, 234, 0.3);
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: sdbpkp-spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+@keyframes sdbpkp-spin {
+    to { transform: rotate(360deg); }
+}
+
+.sdbpkp-error {
+    color: #c0392b;
+    background: #fdecea;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* ── Booking step ────────────────────────────────────────────────────────── */
+.sdbpkp-booking-box {
+    background: #f7f8ff;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    padding: 28px 32px;
+    max-width: 520px;
+    margin: 20px 0;
+}
+
+.sdbpkp-booking-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 18px;
+}
+
+.sdbpkp-booking-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.sdbpkp-booking-box input[type="date"],
+.sdbpkp-booking-box input[type="datetime-local"] {
+    border: 1.5px solid #b0b8f8;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 15px;
+    color: #333;
+    background: #fff;
+    width: 100%;
+    max-width: 300px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.sdbpkp-booking-box input[type="date"]:focus,
+.sdbpkp-booking-box input[type="datetime-local"]:focus {
+    border-color: #667eea;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.sdbpkp-booking-confirm {
+    background: #111 !important;
+    color: #fff !important;
+    border: 2px solid #111 !important;
+    padding: 11px 28px !important;
+    border-radius: 999px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: background 0.2s !important;
+    margin-top: 4px;
+}
+
+.sdbpkp-booking-confirm:hover {
+    background: #333 !important;
+    border-color: #333 !important;
+}
+
+.sdbpkp-booking-confirmed {
+    margin-top: 14px;
+    background: #eef1ff;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* Cart sidebar – booking item */
+.sdbpkp-cart-item--booking {
+    border-left: 3px solid #667eea;
+    padding-left: 8px;
+    margin-bottom: 10px;
+}
+
+.sdbpkp-cart-item-date {
+    font-size: 12px;
+    color: #667eea;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+/* Confirm button disabled state while product is loading */
+.sdbpkp-booking-confirm:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+}
+
+.sdbpkp-booking-loading {
+    color: #aaa;
+    font-size: 13px;
+    font-weight: 400;
+    font-style: italic;
+}
+
+.sdbpkp-booking-product-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 16px;
+    min-height: 22px;
+}

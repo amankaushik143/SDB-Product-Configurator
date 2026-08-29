@@ -1,0 +1,416 @@
+/* ==========================================================================
+   SDB Product Range – [sdb_product_range] shortcode styles
+   All selectors are scoped under .sdbpr- and are intentionally independent
+   from the configurator modal's .sdbpkp- / .sdbpc- styles, so the two
+   features never conflict on the same page.
+   ========================================================================== */
+
+.sdbpr-wrap {
+	--sdbpr-red: #e6007e; /* accent red used for pagination hover/active — adjust this one value to match your brand red exactly */
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+	max-width: 1200px;
+	margin: 0 auto;
+	box-sizing: border-box;
+}
+
+.sdbpr-wrap * {
+	box-sizing: border-box;
+}
+
+/* ── Category icon row ─────────────────────────────────────────────────── */
+.sdbpr-cats {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 36px;
+	margin-bottom: 40px;
+	padding: 0;
+	border: none;
+	background: none;
+}
+
+/* No :hover / :focus / :active rules here on purpose — we stopped fighting
+   the theme's own hover CSS for specificity (that back-and-forth was the
+   source of the hover "shake"). The only state we style ourselves is
+   .sdbpr-active, which the JS click handler below already adds/removes —
+   add your own hover CSS here if you want it, it won't conflict with this. */
+.sdbpr-cat-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	background: transparent;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	text-decoration: none;
+	max-width: 180px;
+	font-family: inherit;
+}
+
+.sdbpr-cat-icon {
+	width: 158px;
+	height: 158px;
+	border-radius: 50%;
+	background-color: #111;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	flex-shrink: 0;
+	border: 3px solid transparent;
+}
+
+.sdbpr-cat-icon img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	/*padding: 26px;*/
+}
+
+/* Selected-category indicator — the only state we style. Add to this rule
+   (or override it) for your own active-state look, e.g. a border. */
+.sdbpr-cat-item.sdbpr-active .sdbpr-cat-icon {
+	border-color: #c36 !important;
+
+}
+
+.sdbpr-cats [type=button]:focus, .sdbpr-cats [type=button]:hover, .sdbpr-cats button:focus, .sdbpr-cats [type=button], .sdbpr-cats button:hover {
+    background-color: transparent;
+    color: #fff;
+    text-decoration: none;
+    border: none;
+}
+
+.sdbpr-cat-label {
+	font-size: 14px;
+	font-weight: 600;
+	color: #333;
+	text-align: center;
+	line-height: 1.3;
+}
+
+.sdbpr-cat-item.sdbpr-active .sdbpr-cat-label {
+	color: #111;
+}
+
+/* ── Product grid ───────────────────────────────────────────────────────── */
+.sdbpr-products {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 24px;
+	min-height: 120px;
+	position: relative;
+}
+
+@media (max-width: 980px) {
+	.sdbpr-products {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+@media (max-width: 680px) {
+	.sdbpr-products {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 16px;
+	}
+}
+
+@media (max-width: 420px) {
+	.sdbpr-products {
+		grid-template-columns: 1fr;
+	}
+}
+
+.sdbpr-card {
+	background: #fff;
+	border: 1px solid #eee;
+	border-radius: 14px;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.sdbpr-card:hover {
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+	transform: translateY(-2px);
+}
+
+.sdbpr-card-image {
+	display: block;
+	background: #000;
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	overflow: hidden;
+}
+
+.sdbpr-card-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.sdbpr-card-body {
+	padding: 12px 14px 4px;
+	flex: 1;
+}
+
+.sdbpr-card-name {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 17px;
+	font-weight: 600;
+	color: #111;
+	text-decoration: none;
+	margin-bottom: 6px;
+	line-height: 1.35;
+}
+
+.sdbpr-card-name:hover {
+	color: #667eea;
+}
+
+.sdbpr-card-name-text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sdbpr-card-name-icon {
+	flex-shrink: 0;
+	width: 16px;
+	height: 16px;
+	display: inline-flex;
+	color: #111;
+}
+
+.sdbpr-card-name-icon svg {
+	width: 100%;
+	height: 100%;
+	stroke: currentColor;
+}
+
+.sdbpr-card-price {
+	font-size: 16px;
+	font-weight: 700;
+	color: #111;
+}
+
+.sdbpr-card-price ins {
+	text-decoration: none;
+	margin-left: 4px;
+}
+
+.sdbpr-card-price del {
+	color: #999;
+	font-weight: 400;
+	font-size: 13px;
+}
+
+.sdbpr-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px 14px;
+}
+
+.sdbpr-qty-input {
+	width: 104px !important;
+	height: 36px;
+	text-align: center;
+	border: 1px solid #d8d8d8 !important;
+	border-radius: 8px;
+	font-size: 12px;
+	padding: 0;
+	-moz-appearance: textfield;
+}
+
+.sdbpr-qty-input::-webkit-inner-spin-button,
+.sdbpr-qty-input::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+.sdbpr-add-btn {
+	flex: 1;
+	height: 36px;
+	background-color: #000 !important;
+	color: #fff !important;
+	border: none !important;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background 0.2s, opacity 0.2s;
+}
+
+.sdbpr-add-btn svg {
+	width: 18px;
+	height: 18px;
+	stroke: #fff !important;
+}
+
+.sdbpr-add-btn:hover {
+	background-color: #333 !important;
+}
+
+.sdbpr-add-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.sdbpr-add-btn.sdbpr-added {
+	background-color: #2e9e5b !important;
+}
+
+.sdbpr-added-msg {
+	margin: 0 14px 14px;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #2e9e5b;
+	animation: sdbpr-fade-in 0.2s ease;
+}
+
+.sdbpr-added-msg a {
+	color: var(--sdbpr-red);
+	text-decoration: underline;
+	font-weight: 600;
+}
+
+/* Defensive: hide WooCommerce's own native "View cart" notice link/button
+   if a theme injects one inside our markup — we show our own via
+   .sdbpr-added-msg above and don't want a duplicate. */
+.sdbpr-wrap .added_to_cart,
+.sdbpr-wrap a.added_to_cart.wc-forward {
+	display: none !important;
+}
+
+@keyframes sdbpr-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.sdbpr-card--oos .sdbpr-card-image {
+	opacity: 0.5;
+}
+
+.sdbpr-card-oos {
+	margin: 0 14px 14px;
+	text-align: center;
+	font-size: 12px;
+	font-weight: 600;
+	color: #b33;
+	background: #fdecea;
+	border-radius: 6px;
+	padding: 8px;
+}
+
+/* ── Loading / empty states ─────────────────────────────────────────────── */
+.sdbpr-loading {
+	grid-column: 1 / -1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 60px 0;
+}
+
+.sdbpr-spinner {
+	display: inline-block;
+	width: 26px;
+	height: 26px;
+	border: 3px solid rgba(17, 17, 17, 0.15);
+	border-top-color: #111;
+	border-radius: 50%;
+	animation: sdbpr-spin 0.8s linear infinite;
+}
+
+@keyframes sdbpr-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.sdbpr-empty {
+	grid-column: 1 / -1;
+	text-align: center;
+	padding: 50px 0;
+	color: #888;
+	font-size: 15px;
+}
+
+.sdbpr-error {
+	grid-column: 1 / -1;
+	text-align: center;
+	padding: 20px;
+	color: #b33;
+	background: #fdecea;
+	border-radius: 8px;
+	font-size: 14px;
+}
+
+.sdbpr-admin-hint {
+	background: #fff8e5;
+	border: 1px solid #f0dca0;
+	padding: 14px 18px;
+	border-radius: 6px;
+	color: #6b5a1e;
+	font-size: 14px;
+}
+
+/* ── Pagination ─────────────────────────────────────────────────────────── */
+.sdbpr-pagination-wrap {
+	margin-top: 32px;
+}
+
+.sdbpr-pagination {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.sdbpr-page-btn {
+	min-width: 36px;
+	height: 36px;
+	padding: 0 8px;
+	border: 1px solid #000 !important;
+	background: #000 !important;
+	color: #fff !important;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.sdbpr-page-btn:hover:not(.sdbpr-page-active):not(:disabled) {
+	background: var(--sdbpr-red) !important;
+	border-color: var(--sdbpr-red) !important;
+	color: #fff !important;
+}
+
+.sdbpr-page-btn.sdbpr-page-active {
+	background: var(--sdbpr-red) !important;
+	border-color: var(--sdbpr-red) !important;
+	color: #fff !important;
+	cursor: default;
+}
+
+.sdbpr-page-btn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
+}
